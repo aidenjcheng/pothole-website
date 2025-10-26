@@ -1,0 +1,302 @@
+@import "../app.css";
+
+@keyframes scale-and-fadein {
+ 0% {
+  transform: scale(0.2);
+  opacity: 0;
+ }
+ 100% {
+  transform: scale(1);
+  opacity: 1;
+ }
+}
+
+:root {
+ --border-radius: 20px;
+ --padding: 12px;
+ --inner-border-radius: calc(var(--border-radius) - var(--padding));
+}
+
+.mk-callout .mk-selected {
+ height: 100% !important;
+}
+
+.annotation-container {
+ width: 100%;
+ min-width: 20rem;
+ height: 100%;
+ background: #f5f5f5;
+ position: relative;
+ overflow: hidden;
+ border-radius: var(--border-radius);
+ flex-direction: column;
+ justify-content: flex-start;
+ align-items: flex-start;
+ display: inline-flex;
+ isolation: isolate;
+ transform-origin: bottom left;
+ /*animation: 0.4s cubic-bezier(0.4, 0, 0, 1.5) 0s 1 normal scale-and-fadein;*/
+}
+
+.annotation-border {
+ width: 100%;
+ height: 100%;
+ position: absolute;
+ top: 0;
+ right: 0;
+ z-index: 50;
+ pointer-events: none;
+ border-radius: var(--border-radius);
+ box-shadow: 0px 0px 0px 1px rgba(0, 0, 0, 0.25) inset;
+}
+
+.header-section {
+ align-self: stretch;
+ padding: var(--padding);
+ background: white;
+ border-radius: var(--border-radius);
+ border-bottom: 1px rgba(126, 126, 129, 0.2) solid;
+ flex-direction: column;
+ justify-content: flex-start;
+ align-items: flex-start;
+ gap: 12px;
+ display: flex;
+}
+
+.header-content {
+ align-self: stretch;
+ height: 34px;
+ justify-content: space-between;
+ align-items: flex-start;
+ display: inline-flex;
+}
+
+.location-info {
+ flex-direction: column;
+ justify-content: flex-start;
+ align-items: flex-start;
+ display: inline-flex;
+}
+
+.city-name {
+ color: black;
+ font-size: 16px;
+ font-family:
+  -apple-system,
+  SF Pro Text;
+ font-weight: 500;
+ word-wrap: break-word;
+}
+
+.state-name {
+ color: #7e7e81;
+ font-size: 12px;
+ font-family:
+  -apple-system,
+  SF Pro Text;
+ font-weight: 400;
+ word-wrap: break-word;
+}
+
+.score-controls {
+ align-self: stretch;
+ justify-content: flex-end;
+ align-items: center;
+ gap: 6px;
+ display: flex;
+}
+
+.score-badge {
+ width: 34px;
+ align-self: stretch;
+ background: linear-gradient(180deg, #71b5ff 0%, #0a7eff 100%);
+ box-shadow: 0px 0px 2.7px 1px rgba(0, 0, 0, 0.1);
+ overflow: hidden;
+ border-radius: 9999px;
+ outline: 2px white solid;
+ outline-offset: -2px;
+ justify-content: center;
+ align-items: center;
+ gap: 10px;
+ display: flex;
+}
+
+.score-text {
+ color: white;
+ font-size: 16px;
+ font-family:
+  -apple-system,
+  SF Pro Text;
+ font-weight: 500;
+ word-wrap: break-word;
+}
+
+.score-controls-container {
+ align-self: stretch;
+ overflow: hidden;
+ border-radius: 8px;
+ outline: 1px #bebec0 solid;
+ outline-offset: -1px;
+ flex-direction: column;
+ justify-content: space-between;
+ align-items: flex-start;
+ display: inline-flex;
+}
+
+.controls-group {
+ flex-direction: column;
+ justify-content: flex-start;
+ align-items: flex-start;
+ gap: 1px;
+ display: flex;
+}
+
+.control-button {
+ padding-left: 2px;
+ padding-right: 2px;
+ flex-direction: column;
+ justify-content: center;
+ align-items: flex-start;
+ gap: 10px;
+ display: flex;
+ cursor: pointer;
+ transition: all 0.2s cubic-bezier(0.4, 0, 0, 1.5);
+ user-select: none;
+ -webkit-user-select: none;
+}
+
+.control-button:active {
+ transform: scale(0.97);
+ opacity: 0.5;
+}
+
+.control-icon {
+ width: 16px;
+ height: 16px;
+ position: relative;
+}
+
+.control-icon-up {
+ transform: rotate(-180deg);
+}
+
+.divider {
+ align-self: stretch;
+ height: 1px;
+ position: relative;
+ border: 1px #bebec0 solid;
+}
+
+.location-image {
+ align-self: stretch;
+ height: 187px;
+ border-radius: 12px;
+ user-select: none;
+ -webkit-user-select: none;
+}
+
+.actions-section {
+ align-self: stretch;
+ padding: var(--padding);
+ flex-direction: column;
+ justify-content: flex-start;
+ align-items: flex-start;
+ gap: 8px;
+ display: flex;
+}
+
+.buttons-container {
+ align-self: stretch;
+ justify-content: flex-start;
+ align-items: center;
+ gap: 8px;
+ display: inline-flex;
+}
+
+.email-button {
+ flex: 1;
+ padding-left: 11px;
+ padding-right: 11px;
+ background: linear-gradient(
+  180deg,
+  var(--color-azure-55, #1994ff) 0%,
+  var(--color-azure-54, #157cff) 100%
+ );
+ box-shadow: 0px 0px 0px 0.5px #1a94ff;
+ overflow: hidden;
+ border-radius: var(--inner-border-radius);
+ justify-content: center;
+ align-items: center;
+ display: flex;
+ cursor: pointer;
+ transition: all 0.2s cubic-bezier(0.4, 0, 0, 1.5);
+ user-select: none;
+ -webkit-user-select: none;
+}
+
+.email-button:active {
+ transform: scale(0.97);
+ opacity: 0.5;
+}
+
+.email-button-text {
+ text-align: center;
+ justify-content: center;
+ display: flex;
+ flex-direction: column;
+ color: white;
+ font-size: 12px;
+ font-family:
+  -apple-system,
+  SF Pro Text;
+ font-weight: 500;
+ line-height: 20px;
+ word-wrap: break-word;
+ text-shadow: 0px 1px 2px rgba(0, 0, 0, 0.16);
+}
+
+.secondary-button {
+ flex: 1;
+ padding: 2px 11px;
+ position: relative;
+ background: white;
+ border-radius: var(--inner-border-radius);
+ outline: 1px rgba(0, 0, 0, 0.1) solid;
+ justify-content: center;
+ align-items: center;
+ display: flex;
+ cursor: pointer;
+ transition: all 0.2s cubic-bezier(0.4, 0, 0, 1.5);
+ user-select: none;
+ -webkit-user-select: none;
+}
+
+.secondary-button:active {
+ transform: scale(0.97);
+ opacity: 0.5;
+}
+
+.secondary-button-shadow {
+ width: 177px;
+ height: 19px;
+ left: 0;
+ top: 0;
+ position: absolute;
+ background: rgba(255, 255, 255, 0);
+ box-shadow: 0px 1px 2px -1px var(--border);
+ border-radius: var(--inner-border-radius);
+}
+
+.secondary-button-text {
+ text-align: center;
+ justify-content: center;
+ display: flex;
+ flex-direction: column;
+ color: black;
+ font-size: 12px;
+ font-family:
+  -apple-system,
+  SF Pro Text;
+ font-weight: 500;
+ word-wrap: break-word;
+}

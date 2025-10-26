@@ -1,0 +1,48 @@
+{
+  "name": "maps-2",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "react-router build",
+    "dev": "react-router dev",
+    "start": "react-router-serve ./build/server/index.js",
+    "typecheck": "react-router typegen && tsc"
+  },
+  "dependencies": {
+    "@base-ui-components/react": "^1.0.0-beta.4",
+    "@radix-ui/react-dialog": "^1.1.15",
+    "@radix-ui/react-label": "^2.1.7",
+    "@radix-ui/react-slot": "^1.2.3",
+    "@react-router/fs-routes": "^7.9.4",
+    "@react-router/node": "^7.9.2",
+    "@react-router/serve": "^7.9.2",
+    "@supabase/ssr": "^0.7.0",
+    "@supabase/supabase-js": "^2.75.1",
+    "@tanstack/react-query": "^5.90.3",
+    "@vitejs/plugin-rsc": "^0.5.0",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "cmdk": "^1.1.1",
+    "isbot": "^5.1.31",
+    "lucide-react": "^0.546.0",
+    "motion": "^12.23.24",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1",
+    "react-router": "^7.9.2",
+    "sonner": "^2.0.7",
+    "tailwind-merge": "^3.3.1"
+  },
+  "devDependencies": {
+    "@react-router/dev": "^7.9.4",
+    "@tailwindcss/vite": "^4.1.13",
+    "@types/apple-mapkit-js-browser": "^5.78.1",
+    "@types/node": "^22",
+    "@types/react": "^19.1.13",
+    "@types/react-dom": "^19.1.9",
+    "tailwindcss": "^4.1.13",
+    "tw-animate-css": "^1.4.0",
+    "typescript": "^5.9.2",
+    "vite": "^7.1.7",
+    "vite-tsconfig-paths": "^5.1.4"
+  }
+}
