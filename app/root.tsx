@@ -33,18 +33,19 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <Meta />
         <Links />
       </head>
-      <body>
+      <body suppressHydrationWarning>
         {children}
         <ScrollRestoration />
         <Scripts />
         <script
-   src="https://cdn.apple-mapkit.com/mk/5.x.x/mapkit.core.js"
-   crossOrigin="anonymous"
-   async
-   data-callback="initMapKit"
-   data-libraries="map,annotations,services,look-around"
-   data-token={import.meta.env.VITE_MAPKIT_PRIVATE_TOKEN}
-  ></script>
+          src="https://cdn.apple-mapkit.com/mk/5.x.x/mapkit.core.js"
+          crossOrigin="anonymous"
+          async
+          data-callback="initMapKit"
+          data-libraries="map,annotations,services,look-around"
+          data-token="eyJraWQiOiI2NDRKVTQ2MlhMIiwidHlwIjoiSldUIiwiYWxnIjoiRVMyNTYifQ.eyJpc3MiOiJYVzc2OFVLMkRVIiwiaWF0IjoxNzYxNzcyMzI5LCJleHAiOjE3NjI0MTU5OTl9.MtELrNATlUgq-YIm4zoQKq0MyR1wwGnIdkqdun-rG5JJreXNOBlaA1-CiTAey1IO-utPJMwPO2Kv2JeiVYY1uw"
+          //  data-token={import.meta.env.VITE_MAPKIT_PRIVATE_TOKEN}
+        />
       </body>
     </html>
   );

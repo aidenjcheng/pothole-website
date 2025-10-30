@@ -2,75 +2,7 @@ import { createClient } from '~/lib/supabase/server'
 import { type LoaderFunctionArgs, redirect, useLoaderData } from 'react-router'
 import MapApp from '~/maps/maps'
 
-export const action = async ({ request }: { request: Request }) => {
-  const { supabase } = createClient(request)
-  const formData = await request.formData()
-
-  const action = formData.get('action') as string
-
-  const potholeId = formData.get('potholeId') as string
-  const userId = formData.get('userId') as string
-
-  try {
-    if (action === 'upvote') {
-      const { data: existingUpvotes, error: checkError } = await supabase
-        .from('pothole_upvotes')
-        .select('*')
-        .eq('pothole_id', potholeId)
-        .eq('user_id', userId)
-        .eq('vote_type', 'upvote');
-
-      if (checkError) throw checkError;
-
-      if (existingUpvotes && existingUpvotes.length > 0) {
-        return { error: 'You have already upvoted this pothole!' };
-      }
-
-      const { error } = await supabase
-        .from('pothole_upvotes')
-        .insert({
-          pothole_id: potholeId,
-          user_id: userId,
-          vote_type: 'upvote'
-        });
-
-      if (error) throw error;
-
-      return { success: true, action: 'upvote', potholeId };
-    }
-
-    if (action === 'downvote') {
-      const { data: existingDownvotes, error: checkError } = await supabase
-        .from('pothole_upvotes')
-        .select('*')
-        .eq('pothole_id', potholeId)
-        .eq('user_id', userId)
-        .eq('vote_type', 'downvote');
-
-      if (checkError) throw checkError;
-
-      if (existingDownvotes && existingDownvotes.length > 0) {
-        return { error: 'You have already downvoted this pothole!' };
-      }
-
-      const { error } = await supabase
-        .from('pothole_upvotes')
-        .insert({
-          pothole_id: potholeId,
-          user_id: userId,
-          vote_type: 'downvote'
-        });
-
-      if (error) throw error;
-
-      return { success: true, action: 'downvote', potholeId };
-    }
-
-    return { error: 'Invalid action' };
-  } catch (error) {
-    return { error: error instanceof Error ? error.message : 'An error occurred' };
-  }
-}
+// Removed action - upvote/downvote functionality moved to client-side
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { supabase } = createClient(request)

@@ -1,8 +1,28 @@
 import React, { useEffect, useRef, useState, type KeyboardEvent } from "react";
+import { useLocation } from "react-router";
 import { Toaster, toast } from "sonner";
-import { CommandDialog, CommandInput, CommandList, CommandGroup, CommandItem } from "~/components/ui/command";
-import { useFetcher } from "react-router";
-import { Navigation, MapPin, ArrowLeft, AlertTriangle, SearchIcon, Search, Star, Compass, LogOut } from "lucide-react";
+import {
+  CommandDialog,
+  CommandInput,
+  CommandList,
+  CommandGroup,
+  CommandItem,
+} from "~/components/ui/command";
+import { createClient } from "~/lib/supabase/client";
+import {
+  Navigation,
+  MapPin,
+  ArrowLeft,
+  AlertTriangle,
+  SearchIcon,
+  Search,
+  Star,
+  Compass,
+  LogOut,
+  Map as MapIcon,
+  FileText,
+  Trophy,
+} from "lucide-react";
 import DoubleChevronLeft from "~/components/logos/sidebar";
 import { XIcon } from "lucide-react";
 import type { Pothole } from "~/types/index";
@@ -11,14 +31,17 @@ import "./maps.css";
 import { Button } from "~/components/ui/button";
 import Logo from "~/components/logos/logo";
 import { CommandShortcut } from "~/components/ui/command";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "~/components/ui/dialog";
-import { Frame, FramePanel } from "~/components/ui/frame";
+import Sidebar from "~/components/sidebar/Sidebar";
 import {
-  Menu,
-  MenuTrigger,
-  MenuPopup,
-  MenuItem,
-} from "~/components/ui/menu";
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "~/components/ui/dialog";
+import { Frame, FramePanel } from "~/components/ui/frame";
+import { Menu, MenuTrigger, MenuPopup, MenuItem } from "~/components/ui/menu";
 import {
   Table,
   TableBody,
@@ -35,16 +58,18 @@ const MapKitMap = ({
   onOpenCommandMenu,
   commandDialogOpen,
   priorityModalOpen,
-  onOpenPriorityModal
+  onOpenPriorityModal,
 }: {
-  initialPotholes: Pothole[],
-  user: User,
-  onFocusPothole: (fn: (pothole: Pothole) => void) => void,
-  onFocusLocation: (fn: (location: typeof marylandLocations[0]) => void) => void,
-  onOpenCommandMenu: () => void,
-  commandDialogOpen: boolean,
-  priorityModalOpen: boolean,
-  onOpenPriorityModal: () => void
+  initialPotholes: Pothole[];
+  user: User;
+  onFocusPothole: (fn: (pothole: Pothole) => void) => void;
+  onFocusLocation: (
+    fn: (location: (typeof marylandLocations)[0]) => void
+  ) => void;
+  onOpenCommandMenu: () => void;
+  commandDialogOpen: boolean;
+  priorityModalOpen: boolean;
+  onOpenPriorityModal: () => void;
 }) => {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -55,151 +80,148 @@ const MapKitMap = ({
           e.target instanceof HTMLTextAreaElement ||
           e.target instanceof HTMLSelectElement
         ) {
-          return
+          return;
         }
-        e.preventDefault()
-        onOpenPriorityModal()
+        e.preventDefault();
+        onOpenPriorityModal();
       }
-    }
-    document.addEventListener("keydown", handleKeyDown)
-    return () => document.removeEventListener("keydown", handleKeyDown)
-  }, [onOpenPriorityModal])
- const mapContainerRef = useRef<HTMLDivElement>(null);
- const mapInstanceRef = useRef<mapkit.Map | null>(null);
- const lookAroundInstanceRef = useRef<any>(null);
- const [potholes, setPotholes] = useState<Pothole[]>(initialPotholes);
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [onOpenPriorityModal]);
+  const mapContainerRef = useRef<HTMLDivElement>(null);
+  const mapInstanceRef = useRef<mapkit.Map | null>(null);
+  const lookAroundInstanceRef = useRef<any>(null);
+  const [potholes, setPotholes] = useState<Pothole[]>(initialPotholes);
   const [loading, setLoading] = useState<boolean>(false);
   const [showLookAround, setShowLookAround] = useState<boolean>(false);
-  const [currentLookAroundPothole, setCurrentLookAroundPothole] = useState<Pothole | null>(null);
+  const [currentLookAroundPothole, setCurrentLookAroundPothole] =
+    useState<Pothole | null>(null);
   const [showSidebar, setShowSidebar] = useState<boolean>(true);
 
-  useEffect(() => {
-    console.log('MapKitMap: potholes length:', potholes.length);
-    console.log('MapKitMap: loading:', loading);
-    console.log('MapKitMap: initialPotholes length:', initialPotholes.length);
-  }, [potholes, loading, initialPotholes]);
- const potholeToAnnotationRef = useRef<Map<string, mapkit.MarkerAnnotation>>(new Map());
- const fetcher = useFetcher();
+  const potholeToAnnotationRef = useRef<Map<string, mapkit.MarkerAnnotation>>(
+    new Map()
+  );
+  const supabase = createClient();
 
- const focusOnPothole = (pothole: Pothole) => {
-  const targetAnnotation = potholeToAnnotationRef.current.get(pothole.id);
+  const focusOnPothole = (pothole: Pothole) => {
+    const targetAnnotation = potholeToAnnotationRef.current.get(pothole.id);
 
-  if (targetAnnotation && mapInstanceRef.current) {
-   const span = new window.mapkit.CoordinateSpan(0.01, 0.01);
-   const region = new window.mapkit.CoordinateRegion(targetAnnotation.coordinate, span);
-   mapInstanceRef.current.setRegionAnimated(region);
-  }
- };
+    if (targetAnnotation && mapInstanceRef.current) {
+      const span = new window.mapkit.CoordinateSpan(0.01, 0.01);
+      const region = new window.mapkit.CoordinateRegion(
+        targetAnnotation.coordinate,
+        span
+      );
+      mapInstanceRef.current.setRegionAnimated(region);
+    }
+  };
 
- const showLookAroundForPothole = async (pothole: Pothole) => {
-  if (!window.mapkit || !window.mapkit.LookAroundPreview) {
-    console.error('Look Around not available');
-    return;
-  }
+  const showLookAroundForPothole = async (pothole: Pothole) => {
+    if (!window.mapkit || !window.mapkit.LookAroundPreview) {
+      console.error("Look Around not available");
+      return;
+    }
 
-  try {
+    try {
+      if (lookAroundInstanceRef.current) {
+        lookAroundInstanceRef.current.destroy();
+        lookAroundInstanceRef.current = null;
+      }
+
+      const coordinate = new window.mapkit.Coordinate(
+        pothole.latitude,
+        pothole.longitude
+      );
+
+      const lookAround = new window.mapkit.LookAroundPreview(
+        document.getElementById("container"),
+        coordinate
+      );
+
+      lookAroundInstanceRef.current = lookAround;
+
+      setCurrentLookAroundPothole(pothole);
+      setShowLookAround(true);
+    } catch (error) {
+      console.error("Error creating Look Around view:", error);
+    }
+  };
+
+  const closeLookAround = () => {
     if (lookAroundInstanceRef.current) {
       lookAroundInstanceRef.current.destroy();
       lookAroundInstanceRef.current = null;
     }
+    setShowLookAround(false);
+    setCurrentLookAroundPothole(null);
+  };
 
-    const coordinate = new window.mapkit.Coordinate(pothole.latitude, pothole.longitude);
+  useEffect(() => {
+    onFocusPothole(focusOnPothole);
+  }, [onFocusPothole, focusOnPothole]);
 
-    const lookAround = new window.mapkit.LookAroundPreview(
-      document.getElementById("container"),
-      coordinate
-    );
-
-    lookAroundInstanceRef.current = lookAround;
-
-    setCurrentLookAroundPothole(pothole);
-    setShowLookAround(true);
-  } catch (error) {
-    console.error('Error creating Look Around view:', error);
-  }
- };
-
- const closeLookAround = () => {
-  if (lookAroundInstanceRef.current) {
-    lookAroundInstanceRef.current.destroy();
-    lookAroundInstanceRef.current = null;
-  }
-  setShowLookAround(false);
-  setCurrentLookAroundPothole(null);
- };
-
- useEffect(() => {
-  onFocusPothole(focusOnPothole);
- }, [onFocusPothole, focusOnPothole]);
-
- const focusOnLocation = (location: typeof marylandLocations[0]) => {
-  if (mapInstanceRef.current) {
-    const span = new window.mapkit.CoordinateSpan(0.01, 0.01);
-    const region = new window.mapkit.CoordinateRegion(
-      new window.mapkit.Coordinate(location.latitude, location.longitude),
-      span
-    );
-    mapInstanceRef.current.setRegionAnimated(region);
-  }
- };
-
- useEffect(() => {
-  onFocusLocation(focusOnLocation);
- }, [onFocusLocation]);
-
- useEffect(() => {
-  if (fetcher.data) {
-   if (fetcher.data.error) {
-    toast.error(fetcher.data.error);
-   } else if (fetcher.data.success) {
-    if (fetcher.data.action === 'upvote') {
-     toast.success('Upvoted pothole!');
-    } else if (fetcher.data.action === 'downvote') {
-     toast.success('Downvoted pothole!');
-    } else if (fetcher.data.action === 'dismiss-street-view-warning') {
+  const focusOnLocation = (location: (typeof marylandLocations)[0]) => {
+    if (mapInstanceRef.current) {
+      const span = new window.mapkit.CoordinateSpan(0.01, 0.01);
+      const region = new window.mapkit.CoordinateRegion(
+        new window.mapkit.Coordinate(location.latitude, location.longitude),
+        span
+      );
+      mapInstanceRef.current.setRegionAnimated(region);
     }
-   }
-  }
- }, [fetcher.data]);
+  };
 
- useEffect(() => {
-  console.log('Map initialization useEffect triggered:', { loading, potholesLength: potholes.length });
-  if (loading || potholes.length === 0) {
-    console.log('Map initialization skipped:', { loading, potholesLength: potholes.length });
-    return;
-  }
-  console.log('Map initialization proceeding...');
+  useEffect(() => {
+    onFocusLocation(focusOnLocation);
+  }, [onFocusLocation]);
 
-  const setupMapKitJs = async (): Promise<void> => {
-   if (!window.mapkit || window.mapkit.loadedLibraries.length === 0) {
-    await new Promise<void>((resolve) => {
-     window.initMapKit = resolve;
+  useEffect(() => {
+    console.log("Map initialization useEffect triggered:", {
+      loading,
+      potholesLength: potholes.length,
     });
-    delete window.initMapKit;
-   }
-  };
+    if (loading || potholes.length === 0) {
+      console.log("Map initialization skipped:", {
+        loading,
+        potholesLength: potholes.length,
+      });
+      return;
+    }
+    console.log("Map initialization proceeding...");
 
-  const createElementFromHTML = (html: string): ChildNode | null => {
-   const template = document.createElement("template");
-   template.innerHTML = html.trim();
-   return template.content.firstChild;
-  };
+    const setupMapKitJs = async (): Promise<void> => {
+      if (!window.mapkit || window.mapkit.loadedLibraries.length === 0) {
+        await new Promise<void>((resolve) => {
+          window.initMapKit = resolve;
+        });
+        delete window.initMapKit;
+      }
+    };
 
-  const initializeMap = async () => {
-   console.log('initializeMap: Starting map initialization');
-   console.log('initializeMap: potholes available:', potholes.length);
+    const createElementFromHTML = (html: string): ChildNode | null => {
+      const template = document.createElement("template");
+      template.innerHTML = html.trim();
+      return template.content.firstChild;
+    };
 
-   await setupMapKitJs();
+    const initializeMap = async () => {
+      console.log("initializeMap: Starting map initialization");
+      console.log("initializeMap: potholes available:", potholes.length);
 
-   const offset = new DOMPoint(-150, 10);
-   const annotationsToPothole = new Map<mapkit.MarkerAnnotation, Pothole>();
+      await setupMapKitJs();
 
-   const potholeAnnotationCallout: mapkit.AnnotationCalloutDelegate = {
-    calloutElementForAnnotation: (annotation: mapkit.MarkerAnnotation): HTMLElement | null => {
-     const pothole = annotationsToPothole.get(annotation);
-     if (!pothole) return null;
+      const offset = new DOMPoint(-150, 10);
+      const annotationsToPothole = new Map<mapkit.MarkerAnnotation, Pothole>();
 
-     const div = createElementFromHTML(`
+      const potholeAnnotationCallout: mapkit.AnnotationCalloutDelegate = {
+        calloutElementForAnnotation: (
+          annotation: mapkit.MarkerAnnotation
+        ): HTMLElement | null => {
+          const pothole = annotationsToPothole.get(annotation);
+          if (!pothole) return null;
+
+          const div = createElementFromHTML(`
             <div class="annotation-container">
             <div class="annotation-border"></div>
               <div class="header-section">
@@ -214,7 +236,7 @@ const MapKitMap = ({
                     </div>
                     <div class="score-controls-container">
                       <div class="controls-group">
-                        <div class="control-button ${user ? 'control-button-active' : ''}" id="upvote-btn-${pothole.id}">
+                        <div class="control-button ${user ? "control-button-active" : ""}" id="upvote-btn-${pothole.id}">
                           <div class="control-icon control-icon-up">
                           <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
                           <path fill-rule="evenodd" clip-rule="evenodd" d="M14.0608 5.49987L13.5304 6.0302L8.70722 10.8534C8.3167 11.244 7.68353 11.244 7.29301 10.8534L2.46978 6.0302L1.93945 5.49987L3.00011 4.43921L3.53044 4.96954L8.00011 9.43921L12.4698 4.96954L13.0001 4.43921L14.0608 5.49987Z" fill="#666666"/>
@@ -223,7 +245,7 @@ const MapKitMap = ({
                           </div>
                         </div>
                         <div class="divider"></div>
-                        <div class="control-button ${user ? 'control-button-active' : ''}" id="downvote-btn-${pothole.id}">
+                        <div class="control-button ${user ? "control-button-active" : ""}" id="downvote-btn-${pothole.id}">
                           <div class="control-icon">
                           <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
                           <path fill-rule="evenodd" clip-rule="evenodd" d="M14.0608 5.49987L13.5304 6.0302L8.70722 10.8534C8.3167 11.244 7.68353 11.244 7.29301 10.8534L2.46978 6.0302L1.93945 5.49987L3.00011 4.43921L3.53044 4.96954L8.00011 9.43921L12.4698 4.96954L13.0001 4.43921L14.0608 5.49987Z" fill="#666666"/>
@@ -239,10 +261,8 @@ const MapKitMap = ({
               </div>
               <div class="actions-section">
                 <div class="buttons-container">
-                  <div class="email-button" data-id="${pothole.id}">
-                  <a href="mailto:representative@example.com">
-                    <button class="email-button-text">Email Representative</button>
-                    </a>
+                  <div class="email-button" data-id="${pothole.id}" data-lat="${pothole.latitude}" data-lng="${pothole.longitude}">
+                    <button class="email-button-text">File Report</button>
                   </div>
 
                   <button class="secondary-button" data-id="${pothole.id}" >
@@ -252,357 +272,301 @@ const MapKitMap = ({
                 </div>
               </div>
             </div>
-          `);
+          `) as HTMLElement;
 
-     const upvoteBtn = div.querySelector(`#upvote-btn-${pothole.id}`) as HTMLDivElement;
-     if (upvoteBtn && user) {
-      upvoteBtn.addEventListener("click", async (event: Event) => {
-       event.preventDefault();
-       event.stopPropagation();
+          const upvoteBtn = div.querySelector(
+            `#upvote-btn-${pothole.id}`
+          ) as HTMLDivElement;
+          if (upvoteBtn && user) {
+            upvoteBtn.addEventListener("click", async (event: Event) => {
+              event.preventDefault();
+              event.stopPropagation();
 
-       const formData = new FormData();
-       formData.append('action', 'upvote');
-       formData.append('potholeId', pothole.id);
-       formData.append('userId', user.id);
+              try {
+                // Increment upvote count
+                const { error } = await supabase
+                  .from("potholes")
+                  .update({
+                    upvote_count: (pothole.upvote_count || 0) + 1,
+                  })
+                  .eq("id", pothole.id);
 
-       fetcher.submit(formData, { method: 'post' });
+                if (error) throw error;
+
+                toast.success("Upvoted pothole!");
+                // Refresh the page to show updated count
+                window.location.reload();
+              } catch (error) {
+                console.error("Error upvoting pothole:", error);
+                toast.error("Failed to upvote pothole. Please try again.");
+              }
+            });
+          }
+
+          const downvoteBtn = div.querySelector(
+            `#downvote-btn-${pothole.id}`
+          ) as HTMLDivElement;
+          if (downvoteBtn && user) {
+            downvoteBtn.addEventListener("click", async (event: Event) => {
+              event.preventDefault();
+              event.stopPropagation();
+
+              try {
+                // Decrement upvote count
+                const { error } = await supabase
+                  .from("potholes")
+                  .update({
+                    upvote_count: Math.max(0, (pothole.upvote_count || 0) - 1),
+                  })
+                  .eq("id", pothole.id);
+
+                if (error) throw error;
+
+                toast.success("Downvoted pothole!");
+                // Refresh the page to show updated count
+                window.location.reload();
+              } catch (error) {
+                console.error("Error downvoting pothole:", error);
+                toast.error("Failed to downvote pothole. Please try again.");
+              }
+            });
+          }
+
+          if (div && div instanceof HTMLElement) {
+            const emailBtn = div.querySelector(
+              `[data-id="${pothole.id}"].email-button`
+            ) as HTMLDivElement;
+            if (emailBtn) {
+              emailBtn.addEventListener("click", async (event: Event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                // Navigate to report page with lat/lng parameters
+                window.location.href = `/report?lat=${pothole.latitude}&lng=${pothole.longitude}`;
+              });
+            }
+
+            const streetViewBtn = div.querySelector(
+              `[data-id="${pothole.id}"].secondary-button`
+            ) as HTMLButtonElement;
+            if (streetViewBtn) {
+              streetViewBtn.addEventListener("click", async (event: Event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                showLookAroundForPothole(pothole);
+              });
+            }
+          }
+
+          return div;
+        },
+
+        calloutAnchorOffsetForAnnotation: (annotation, element) => offset,
+
+        calloutAppearanceAnimationForAnnotation: (annotation) =>
+          ".4s cubic-bezier(0.4, 0, 0, 1.5) 0s 1 normal scale-and-fadein",
+      };
+
+      const annotations: mapkit.MarkerAnnotation[] = potholes.map((pothole) => {
+        const coordinate = new window.mapkit.Coordinate(
+          pothole.latitude,
+          pothole.longitude
+        );
+
+        const annotation = new window.mapkit.MarkerAnnotation(coordinate, {
+          callout: potholeAnnotationCallout,
+          color: "#ff6b6b",
+        });
+
+        annotationsToPothole.set(annotation, pothole);
+        potholeToAnnotationRef.current.set(pothole.id, annotation);
+        return annotation;
       });
-     }
 
-     const downvoteBtn = div.querySelector(`#downvote-btn-${pothole.id}`) as HTMLDivElement;
-     if (downvoteBtn && user) {
-      downvoteBtn.addEventListener("click", async (event: Event) => {
-       event.preventDefault();
-       event.stopPropagation();
-
-       const formData = new FormData();
-       formData.append('action', 'downvote');
-       formData.append('potholeId', pothole.id);
-       formData.append('userId', user.id);
-
-       fetcher.submit(formData, { method: 'post' });
-      });
-     }
-
-     if (div && div instanceof HTMLElement) {
-      const streetViewBtn = div.querySelector(`[data-id="${pothole.id}"].secondary-button`) as HTMLButtonElement;
-      if (streetViewBtn) {
-       streetViewBtn.addEventListener("click", async (event: Event) => {
-        event.preventDefault();
-        event.stopPropagation();
-        showLookAroundForPothole(pothole);
-       });
+      if (mapContainerRef.current && !mapInstanceRef.current) {
+        console.log("initializeMap: Creating map instance");
+        console.log("initializeMap: annotations to show:", annotations.length);
+        mapInstanceRef.current = new window.mapkit.Map(mapContainerRef.current);
+        mapInstanceRef.current.showItems(annotations);
+        console.log("initializeMap: Map created and annotations added");
+      } else {
+        console.log(
+          "initializeMap: Map container not ready or map already exists"
+        );
       }
-     }
+    };
 
-     return div;
-    },
+    initializeMap();
 
-    calloutAnchorOffsetForAnnotation: (annotation, element) => offset,
+    return () => {
+      if (mapInstanceRef.current) {
+        mapInstanceRef.current.destroy();
+        mapInstanceRef.current = null;
+      }
+      if (lookAroundInstanceRef.current) {
+        lookAroundInstanceRef.current.destroy();
+        lookAroundInstanceRef.current = null;
+      }
+      if (window.searchDebounceTimer) {
+        clearTimeout(window.searchDebounceTimer);
+      }
+    };
+  }, [potholes, loading, user]);
 
-    calloutAppearanceAnimationForAnnotation: (annotation) =>
-     ".4s cubic-bezier(0.4, 0, 0, 1.5) 0s 1 normal scale-and-fadein",
-   };
-
-   const annotations: mapkit.MarkerAnnotation[] = potholes.map((pothole) => {
-    const coordinate = new window.mapkit.Coordinate(
-     pothole.latitude,
-     pothole.longitude,
+  if (loading) {
+    return (
+      <div className="w-full h-screen flex items-center justify-center">
+        Loading potholes...
+      </div>
     );
-
-    const annotation = new window.mapkit.MarkerAnnotation(coordinate, {
-     callout: potholeAnnotationCallout,
-     color: "#ff6b6b",
-    });
-
-    annotationsToPothole.set(annotation, pothole);
-    potholeToAnnotationRef.current.set(pothole.id, annotation);
-    return annotation;
-   });
-
-   if (mapContainerRef.current && !mapInstanceRef.current) {
-    console.log('initializeMap: Creating map instance');
-    console.log('initializeMap: annotations to show:', annotations.length);
-    mapInstanceRef.current = new window.mapkit.Map(mapContainerRef.current);
-    mapInstanceRef.current.showItems(annotations);
-    console.log('initializeMap: Map created and annotations added');
-   } else {
-    console.log('initializeMap: Map container not ready or map already exists');
-   }
-  };
-
-  initializeMap();
-
-  return () => {
-   if (mapInstanceRef.current) {
-    mapInstanceRef.current.destroy();
-    mapInstanceRef.current = null;
-   }
-   if (lookAroundInstanceRef.current) {
-    lookAroundInstanceRef.current.destroy();
-    lookAroundInstanceRef.current = null;
-   }
-   if (window.searchDebounceTimer) {
-    clearTimeout(window.searchDebounceTimer);
-   }
-  };
- }, [potholes, loading, user]);
-
- if (loading) {
-  return (
-   <div className="w-full h-screen flex items-center justify-center">
-    Loading potholes...
-   </div>
-  );
- }
+  }
 
   return (
-  <div className="w-full h-screen relative box-border p-1">
-     <Sidebar
-       onOpenCommandMenu={onOpenCommandMenu}
-       onNavigateToPothole={focusOnPothole}
-       potholes={potholes}
-       onToggle={() => setShowSidebar(false)}
-       onOpenPriorityModal={onOpenPriorityModal}
-       isVisible={showSidebar}
-       commandDialogOpen={commandDialogOpen}
-       priorityModalOpen={priorityModalOpen}
-       user={user}
-     />
-   {/* )} */}
+    <div className="w-full h-screen relative box-border flex flex-row overflow-hidden bg-[#f5f5f5]">
+      <Sidebar
+        onOpenCommandMenu={onOpenCommandMenu}
+        onNavigateToPothole={focusOnPothole}
+        potholes={potholes}
+        onToggle={() => setShowSidebar(false)}
+        isVisible={showSidebar}
+        commandDialogOpen={commandDialogOpen}
+        user={user}
+      />
+      {/* )} */}
 
-   {/* External Sidebar Toggle Button */}
-
-
-
-   {/* Command Menu Button */}
-     <div className="absolute top-4 left-4 z-10 flex items-center gap-2">
-
- 
-
-
-
-       {!showSidebar && (
-        <>
-     <Button
-       onClick={() => setShowSidebar(true)}
-       size="icon"
-       variant="outline"
-       className="hover:!bg-accent"
-
-       title="Open Sidebar"
-     >
-       <Compass className="size-4" />
-     </Button>
-           <Button
-           onClick={onOpenPriorityModal}
-           size="icon"
-           variant="outline"
-           className="hover:!bg-accent"
-           title="Open Priority Modal"
-         >
-           <Star className="size-4" />
-         </Button>
-  
-         <Button
-           onClick={onOpenCommandMenu}
-           size="icon"
-           variant="outline"
-           className="hover:!bg-accent"
-           title="Open Command Menu"
-         >
-           <SearchIcon className="size-4" />
-         </Button>
-         </>
-   )}
-     </div>
-      
-
-    <div
-          id="container"
-          className="w-96 h-64 bg-gray-100 border absolute bottom-4 right-4 rounded-xl z-10 data-[is-visible=true]:!opacity-100 data-[is-visible=false]:opacity-0 data-[is-visible=true]:!scale-100 data-[is-visible=false]:scale-75 transition-all duration-400 opacity-0 ease-[cubic-bezier(0.4,_0,_0,_1.5)] scale-75 overflow-hidden origin-bottom-right data-[is-visible=false]:pointer-events-none data-[is-visible=true]:pointer-events-auto"
-          data-is-visible={showLookAround}
-
-        >
-          <button onClick={closeLookAround} className="absolute top-2 right-2 text-sm rounded-full p-2 z-20 bg-[#444446] hover:text-white text-[#ababac]"><XIcon className="size-4" strokeWidth={3}/></button>
-        </div>
-   {/* Map Container */}
-   <div ref={mapContainerRef} className="w-full h-full rounded-xl overflow-hidden border" />
-
-  </div>
- );
-};
-
-const Sidebar = ({
-  onOpenCommandMenu,
-  onNavigateToPothole,
-  potholes,
-  onToggle,
-  onOpenPriorityModal,
-  isVisible,
-  commandDialogOpen,
-  priorityModalOpen,
-  user
-}: {
-  onOpenCommandMenu: () => void,
-  onNavigateToPothole: (pothole: Pothole) => void,
-  potholes: Pothole[],
-  onToggle: () => void,
-  onOpenPriorityModal: () => void,
-  isVisible: boolean,
-  commandDialogOpen: boolean,
-  priorityModalOpen: boolean,
-  user: User
-}) => {
-  const [activeNav, setActiveNav] = useState<'search' | 'priority'>('search');
-
-  const handleNavClick = (nav: 'search' | 'priority') => {
-    setActiveNav(nav);
-    if (nav === 'search') {
-      onOpenCommandMenu();
-    } else if (nav === 'priority') {
-      onOpenPriorityModal();
-    }
-  };
-
-  const recentPotholes = potholes.slice(0, 5); // Show first 5 potholes
-
-  return (
-    <div className="absolute top-4 left-4 w-64 h-[706px] bg-neutral-100 rounded-2xl shadow-[inset_0px_0px_0px_1px_rgba(0,0,0,0.25)] inline-flex flex-col justify-start items-start gap-px overflow-hidden z-20 translate-x-0 data-[is-visible=true]:translate-x-0 data-[is-visible=false]:translate-x-[calc(-1*(100%+16px))] transition-all duration-300 ease-[cubic-bezier(0.215,0.61,0.355,1)]" data-is-visible={isVisible}>
-      <div className="self-stretch flex-1 px-1.5 py-1.5 bg-white rounded-2xl outline outline-offset-[-1px] outline-lighterborder/20 flex flex-col justify-between items-start gap-px w-full relative">
-        <div className="flex flex-col justify-start gap-1 w-full">
-          <div className="w-full px-1.5 pt-1 pb-2 inline-flex justify-between items-center">
-            <div className="inline-flex justify-start items-center gap-[5px]">
-              <Logo className="size-5 opacity-80" />
-              <div className="justify-start text-black text-sm font-semibold">ezpothole</div>
-            </div>
+      <div className="absolute top-4 left-4 z-10 flex items-center gap-2">
+        {!showSidebar && (
+          <>
             <Button
-              onClick={onToggle}
+              onClick={() => setShowSidebar(true)}
               size="icon"
-              variant="ghost"
-              className=" hover:bg-stone-100"
-              title="Close Sidebar"
+              variant="outline"
+              className="hover:!bg-accent"
+              title="Open Sidebar"
             >
-              <DoubleChevronLeft className="size-4" />
+              <Compass className="size-4" />
             </Button>
-          </div>
-          <div className="w-full flex flex-col gap-1">
-            <div
-              className={`w-full h-fit px-1.5 py-1 rounded-md inline-flex justify-start items-center gap-2 overflow-hidden cursor-pointer hover:bg-stone-50 transition-colors ${
-                commandDialogOpen ? 'bg-stone-50' : 'opacity-80'
-              }`}
-              onClick={() => handleNavClick('search')}
+            <Button
+              onClick={onOpenPriorityModal}
+              size="icon"
+              variant="outline"
+              className="hover:!bg-accent"
+              title="Open Priority Modal"
             >
-              <Search className="w-4 h-4" />
-              <span className="justify-start text-Gray text-xs font-medium">Search</span>
-              <CommandShortcut className="h-min mr-0.5">⌘+K</CommandShortcut>
+              <Star className="size-4" />
+            </Button>
 
-            </div>
-            <div
-              className={`w-full h-fit px-1.5 py-1 rounded-md inline-flex justify-start items-center gap-2 overflow-hidden cursor-pointer hover:bg-stone-50 transition-colors ${
-                priorityModalOpen ? 'bg-stone-50' : 'opacity-80'
-              }`}
-              onClick={() => handleNavClick('priority')}
+            <Button
+              onClick={onOpenCommandMenu}
+              size="icon"
+              variant="outline"
+              className="hover:!bg-accent"
+              title="Open Command Menu"
             >
-              <Star className="w-4 h-4" />
-              <div className="justify-start text-Gray text-xs font-medium">Priority</div>
-              <CommandShortcut className="h-min mr-0.5">⌘+B</CommandShortcut>
-
-            </div>
-          </div>
-          <div className="self-stretch px-1.5 pt-3.5 pb-2 inline-flex justify-start items-center gap-2.5">
-            <div className="justify-start text-black text-xs font-medium">Recent potholes</div>
-          </div>
-          <div className="w-full flex flex-col gap-1">
-            {recentPotholes.map((pothole, index) => (
-              <div
-                key={pothole.id}
-                className="w-full h-fit px-1.5 py-1 opacity-80 rounded-md inline-flex justify-start items-center gap-2 overflow-hidden cursor-pointer hover:bg-stone-50 transition-colors"
-                onClick={() => onNavigateToPothole(pothole)}
-              >
-                <MapPin className="w-4 h-4 flex-shrink-0" />
-                <div className="justify-start text-Gray text-xs font-medium truncate">{pothole.name}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-        {/* <div className="self-stretch absolute w-full bottom-0"> */}
-        <Menu>
-          <MenuTrigger               className="w-full h-fit px-1.5 py-1 opacity-80 rounded-md inline-flex justify-start items-center gap-2 overflow-hidden cursor-pointer hover:bg-stone-50 transition-colors"
->
-            <img
-              src={user.user_metadata?.avatar_url || user.user_metadata?.picture}
-              alt={user.user_metadata?.full_name || user.user_metadata?.name || 'User'}
-              className="size-4 rounded-full"
-            />
-            <div className="flex-1 text-left">
-              <div className="justify-start text-black text-xs font-medium truncate">
-                {user.user_metadata?.full_name || user.user_metadata?.name || 'User'}
-              </div>
-            </div>
-          </MenuTrigger>
-          <MenuPopup align="start" className="w-48">
-            <MenuItem variant="destructive" onClick={() => window.location.href = '/logout'}>
-              <LogOut className="w-4 h-4" />
-              Sign out
-            </MenuItem>
-          </MenuPopup>
-        </Menu>
+              <SearchIcon className="size-4" />
+            </Button>
+          </>
+        )}
       </div>
-      {/* </div> */}
-      {/* User Menu */}
-     
 
-      <div className="self-stretch pt-[5px] pb-2.5 inline-flex justify-center items-center gap-2.5">
-        <div className="justify-start text-zinc-500 text-[10px]">made in bethesda</div>
+      <div
+        id="container"
+        className="w-96 h-64 bg-gray-100 border absolute bottom-4 right-4 rounded-xl z-10 data-[is-visible=true]:!opacity-100 data-[is-visible=false]:opacity-0 data-[is-visible=true]:!scale-100 data-[is-visible=false]:scale-75 transition-all duration-400 opacity-0 ease-[cubic-bezier(0.4,_0,_0,_1.5)] scale-75 overflow-hidden origin-bottom-right data-[is-visible=false]:pointer-events-none data-[is-visible=true]:pointer-events-auto"
+        data-is-visible={showLookAround}
+      >
+        <button
+          onClick={closeLookAround}
+          className="absolute top-2 right-2 text-sm rounded-full p-2 z-20 bg-[#444446] hover:text-white text-[#ababac]"
+        >
+          <XIcon className="size-4" strokeWidth={3} />
+        </button>
       </div>
+      {/* Map Container */}
+      <div
+        ref={mapContainerRef}
+        className="w-full max-h-screen h-full rounded-sm overflow-hidden border transition-all duration-300 ease-[cubic-bezier(0.215,0.61,0.355,1)] mt-1 ml-1 box-border"
+      />
     </div>
   );
 };
 
-
 const marylandLocations = [
-  { id: '1', name: 'Baltimore Inner Harbor', latitude: 39.2864, longitude: -76.6053 },
-  { id: '2', name: 'Annapolis State House', latitude: 38.9784, longitude: -76.4922 },
-  { id: '3', name: 'Ocean City Beach', latitude: 38.3365, longitude: -75.0849 },
-  { id: '4', name: 'B&O Railroad Museum', latitude: 39.3072, longitude: -76.6387 },
-  { id: '5', name: 'National Aquarium', latitude: 39.2851, longitude: -76.6083 },
-  { id: '6', name: 'Chesapeake Bay Bridge', latitude: 39.0180, longitude: -76.3994 },
-  { id: '7', name: 'Fort McHenry', latitude: 39.2635, longitude: -76.5798 },
-  { id: '8', name: 'Maryland State House', latitude: 38.9787, longitude: -76.4936 },
+  {
+    id: "1",
+    name: "Baltimore Inner Harbor",
+    latitude: 39.2864,
+    longitude: -76.6053,
+  },
+  {
+    id: "2",
+    name: "Annapolis State House",
+    latitude: 38.9784,
+    longitude: -76.4922,
+  },
+  { id: "3", name: "Ocean City Beach", latitude: 38.3365, longitude: -75.0849 },
+  {
+    id: "4",
+    name: "B&O Railroad Museum",
+    latitude: 39.3072,
+    longitude: -76.6387,
+  },
+  {
+    id: "5",
+    name: "National Aquarium",
+    latitude: 39.2851,
+    longitude: -76.6083,
+  },
+  {
+    id: "6",
+    name: "Chesapeake Bay Bridge",
+    latitude: 39.018,
+    longitude: -76.3994,
+  },
+  { id: "7", name: "Fort McHenry", latitude: 39.2635, longitude: -76.5798 },
+  {
+    id: "8",
+    name: "Maryland State House",
+    latitude: 38.9787,
+    longitude: -76.4936,
+  },
 ];
 
-const CommandMenu = ({
+export const CommandMenu = ({
   potholes,
   focusOnPothole,
   focusOnLocation,
   externalOpen,
   onExternalOpenChange,
-  onOpenPriorityModal
+  onOpenPriorityModal,
 }: {
-  potholes: Pothole[],
-  focusOnPothole: (pothole: Pothole) => void,
-  focusOnLocation: (location: typeof marylandLocations[0]) => void,
-  externalOpen?: boolean,
-  onExternalOpenChange?: (open: boolean) => void,
-  onOpenPriorityModal?: () => void
+  potholes: Pothole[];
+  focusOnPothole: (pothole: Pothole) => void;
+  focusOnLocation: (location: (typeof marylandLocations)[0]) => void;
+  externalOpen?: boolean;
+  onExternalOpenChange?: (open: boolean) => void;
+  onOpenPriorityModal?: () => void;
 }) => {
-  const [internalOpen, setInternalOpen] = useState<boolean>(false)
-  const open = externalOpen !== undefined ? externalOpen : internalOpen
-  const setOpen = onExternalOpenChange || setInternalOpen
-  const [isNavigationMode, setIsNavigationMode] = useState<boolean>(false)
-  const [searchQuery, setSearchQuery] = useState<string>('')
-  const [searchResults, setSearchResults] = useState<any[]>([])
-  const [activeIndex, setActiveIndex] = useState<number>(-1)
+  const location = useLocation();
+  const [internalOpen, setInternalOpen] = useState<boolean>(false);
+  const open = externalOpen !== undefined ? externalOpen : internalOpen;
+  const setOpen = onExternalOpenChange || setInternalOpen;
+  const [isNavigationMode, setIsNavigationMode] = useState<boolean>(false);
+  const [searchQuery, setSearchQuery] = useState<string>("");
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [activeIndex, setActiveIndex] = useState<number>(-1);
 
-  const searchRef = useRef<any>(null)
+  // Hide navigate action and potholes on reports and leaderboard pages
+  const isOnReportsPage = location.pathname === "/report";
+  const isOnLeaderboardPage = location.pathname === "/leaderboard";
+  const shouldHidePotholes = isOnReportsPage || isOnLeaderboardPage;
+
+  const searchRef = useRef<any>(null);
 
   useEffect(() => {
     if (window.mapkit && window.mapkit.Search) {
       searchRef.current = new window.mapkit.Search({
         includeAddresses: true,
         includePointsOfInterest: true,
-        includeQueries: true
+        includeQueries: true,
       });
     }
   }, []);
@@ -616,127 +580,131 @@ const CommandMenu = ({
           e.target instanceof HTMLTextAreaElement ||
           e.target instanceof HTMLSelectElement
         ) {
-          return
+          return;
         }
-        e.preventDefault()
-        setOpen((open) => !open)
+        e.preventDefault();
+        setOpen((open) => !open);
         if (!open) {
-          setIsNavigationMode(false)
-          setSearchQuery('')
-          setSearchResults([])
-          setActiveIndex(-1)
+          setIsNavigationMode(false);
+          setSearchQuery("");
+          setSearchResults([]);
+          setActiveIndex(-1);
         }
       }
-    }
-    document.addEventListener("keydown", down)
-    return () => document.removeEventListener("keydown", down)
-  }, [open])
+    };
+    document.addEventListener("keydown", down);
+    return () => document.removeEventListener("keydown", down);
+  }, [open]);
 
   useEffect(() => {
     if (!searchQuery.trim() || !searchRef.current) {
-      setSearchResults([])
-      setActiveIndex(-1)
-      return
+      setSearchResults([]);
+      setActiveIndex(-1);
+      return;
     }
 
     const timer = setTimeout(() => {
       searchRef.current.autocomplete(searchQuery, (error: any, data: any) => {
         if (error) {
-          console.error('Search error:', error)
-          return
+          console.error("Search error:", error);
+          return;
         }
-        setSearchResults(data.results || [])
-        setActiveIndex(-1)
-      })
-    }, 150)
+        setSearchResults(data.results || []);
+        setActiveIndex(-1);
+      });
+    }, 150);
 
-    return () => clearTimeout(timer)
-  }, [searchQuery])
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
   const handleNavigateTo = () => {
-    setIsNavigationMode(true)
-    setSearchQuery('')
-    setSearchResults([])
-    setActiveIndex(-1)
-  }
+    setIsNavigationMode(true);
+    setSearchQuery("");
+    setSearchResults([]);
+    setActiveIndex(-1);
+  };
 
   const displayedPotholes = potholes.slice(0, 50);
 
-  console.log('CommandMenu: displayedPotholes:', displayedPotholes.length);
-  console.log('CommandMenu: total potholes:', potholes.length);
+  // console.log('CommandMenu: displayedPotholes:', displayedPotholes.length);
+  // console.log('CommandMenu: total potholes:', potholes.length);
 
   const handleSelectPothole = (pothole: Pothole) => {
-    console.log('CommandMenu: selected pothole:', pothole.name);
-    focusOnPothole(pothole)
-    setOpen(false)
-    setIsNavigationMode(false)
-  }
+    // console.log('CommandMenu: selected pothole:', pothole.name);
+    focusOnPothole(pothole);
+    setOpen(false);
+    setIsNavigationMode(false);
+  };
 
-  const handleSelectLocation = (location: typeof marylandLocations[0]) => {
-    console.log('CommandMenu: selected location:', location.name);
+  const handleSelectLocation = (location: (typeof marylandLocations)[0]) => {
+    // console.log('CommandMenu: selected location:', location.name);
     focusOnLocation(location);
-    setOpen(false)
-    setIsNavigationMode(false)
-  }
+    setOpen(false);
+    setIsNavigationMode(false);
+  };
 
   const handleSelectSearchResult = (result: any) => {
-    console.log('CommandMenu: selected search result:', result);
+    // console.log('CommandMenu: selected search result:', result);
 
     if (result.coordinate) {
-      focusOnMapCoordinate(result.coordinate, result)
+      focusOnMapCoordinate(result.coordinate, result);
     } else {
-      const queryText = (result.displayLines && result.displayLines.join(" ")) || "";
+      const queryText =
+        (result.displayLines && result.displayLines.join(" ")) || "";
       if (queryText && searchRef.current) {
         searchRef.current.search(queryText, (error: any, data: any) => {
-          if (error) return
-          const place = (data.places && data.places[0])
+          if (error) return;
+          const place = data.places && data.places[0];
           if (place && place.coordinate) {
-            focusOnMapCoordinate(place.coordinate, place)
+            focusOnMapCoordinate(place.coordinate, place);
           }
-        })
+        });
       }
     }
 
-    setOpen(false)
-    setIsNavigationMode(false)
-  }
+    setOpen(false);
+    setIsNavigationMode(false);
+  };
 
   const focusOnMapCoordinate = (coordinate: any, meta: any) => {
     const syntheticLocation = {
-      id: 'search-result',
-      name: meta.name || (meta.displayLines && meta.displayLines[0]) || 'Search Result',
+      id: "search-result",
+      name:
+        meta.name ||
+        (meta.displayLines && meta.displayLines[0]) ||
+        "Search Result",
       latitude: coordinate.latitude,
-      longitude: coordinate.longitude
-    }
-    focusOnLocation(syntheticLocation as any)
-  }
+      longitude: coordinate.longitude,
+    };
+    focusOnLocation(syntheticLocation as any);
+  };
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (!open || !isNavigationMode || searchResults.length === 0) return
+      if (!open || !isNavigationMode || searchResults.length === 0) return;
 
-      if (e.key === 'ArrowDown') {
-        e.preventDefault()
-        setActiveIndex(prev => Math.min(searchResults.length - 1, prev + 1))
-      } else if (e.key === 'ArrowUp') {
-        e.preventDefault()
-        setActiveIndex(prev => Math.max(0, prev - 1))
-      } else if (e.key === 'Enter' && activeIndex >= 0) {
-        e.preventDefault()
-        handleSelectSearchResult(searchResults[activeIndex])
-      } else if (e.key === 'Escape') {
-        setSearchQuery('')
-        setSearchResults([])
-        setActiveIndex(-1)
-        setIsNavigationMode(false)
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        setActiveIndex((prev) => Math.min(searchResults.length - 1, prev + 1));
+      } else if (e.key === "ArrowUp") {
+        e.preventDefault();
+        setActiveIndex((prev) => Math.max(0, prev - 1));
+      } else if (e.key === "Enter" && activeIndex >= 0) {
+        e.preventDefault();
+        handleSelectSearchResult(searchResults[activeIndex]);
+      } else if (e.key === "Escape") {
+        setSearchQuery("");
+        setSearchResults([]);
+        setActiveIndex(-1);
+        setIsNavigationMode(false);
       }
-    }
+    };
 
-    document.addEventListener('keydown', handleKeyDown)
-    return () => document.removeEventListener('keydown', handleKeyDown)
-  }, [open, isNavigationMode, searchResults, activeIndex])
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [open, isNavigationMode, searchResults, activeIndex]);
 
-  console.log('CommandMenu: rendering dialog, open:', open);
+  // console.log('CommandMenu: rendering dialog, open:', open);
 
   const renderCommandContent = () => {
     if (isNavigationMode) {
@@ -747,14 +715,14 @@ const CommandMenu = ({
               heading="Navigation"
               className="[&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-1.5 [&_[cmdk-group-heading]]:text-xs [&_[cmdk-group-heading]]:font-medium"
             >
-              <CommandItem onSelect={() => setIsNavigationMode(false)} className="flex items-center justify-between">
+              <CommandItem
+                onSelect={() => setIsNavigationMode(false)}
+                className="flex items-center justify-between"
+              >
                 <div className="flex items-center gap-2">
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Back to Potholes
+                  <ArrowLeft className="w-4 h-4 mr-2" />
+                  Back to Potholes
                 </div>
-
-
-
               </CommandItem>
             </CommandGroup>
             <CommandGroup
@@ -764,9 +732,13 @@ const CommandMenu = ({
               {searchResults.map((result, index) => (
                 <CommandItem
                   key={index}
-                  value={result.displayLines ? result.displayLines.join(' ') : 'Result'}
+                  value={
+                    result.displayLines
+                      ? result.displayLines.join(" ")
+                      : "Result"
+                  }
                   onSelect={() => handleSelectSearchResult(result)}
-                  className={`flex flex-col items-start gap-1 px-2 py-3 ${index === activeIndex ? 'bg-accent' : ''}`}
+                  className={`flex flex-col items-start gap-1 px-2 py-3 ${index === activeIndex ? "bg-accent" : ""}`}
                 >
                   <span className="font-medium">
                     {result.displayLines && result.displayLines[0]}
@@ -780,7 +752,7 @@ const CommandMenu = ({
               ))}
             </CommandGroup>
           </>
-        )
+        );
       } else {
         return (
           <>
@@ -810,7 +782,7 @@ const CommandMenu = ({
               ))}
             </CommandGroup>
           </>
-        )
+        );
       }
     } else {
       return (
@@ -819,43 +791,58 @@ const CommandMenu = ({
             heading="Quick Actions"
             className="[&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-1.5 [&_[cmdk-group-heading]]:text-xs [&_[cmdk-group-heading]]:font-medium"
           >
-            <CommandItem onSelect={handleNavigateTo}>
-              <Navigation className="w-4 h-4 mr-2" />
-              Navigate to
+            {!isOnReportsPage && (
+              <CommandItem onSelect={handleNavigateTo}>
+                <Navigation className="w-4 h-4 mr-2" />
+                Navigate to
+              </CommandItem>
+            )}
+            <CommandItem onSelect={() => (window.location.href = "/")}>
+              <MapIcon className="w-4 h-4 mr-2" />
+              Go to Maps
             </CommandItem>
-            <CommandItem onSelect={() => onOpenPriorityModal?.()}>
-              <Star className="w-4 h-4 mr-2" />
-              Open Priorities
+            <CommandItem onSelect={() => (window.location.href = "/report")}>
+              <FileText className="w-4 h-4 mr-2" />
+              Go to Reports
+            </CommandItem>
+            <CommandItem
+              onSelect={() => (window.location.href = "/leaderboard")}
+            >
+              <Trophy className="w-4 h-4 mr-2" />
+              Go to Leaderboard
             </CommandItem>
           </CommandGroup>
 
-          <CommandGroup
-            heading="Potholes"
-            className="[&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-1.5 [&_[cmdk-group-heading]]:text-xs [&_[cmdk-group-heading]]:font-medium"
-          >
-            {displayedPotholes.map((pothole) => (
-              <CommandItem
-                key={pothole.id}
-                value={`${pothole.name} ${new Date(pothole.created_at).toLocaleDateString()}`}
-                onSelect={() => handleSelectPothole(pothole)}
-                className="flex items-center gap-3 px-2 py-3"
-              >
-                <AlertTriangle className="w-4 h-4 text-orange-500" />
-                <div className="flex flex-col flex-1">
-                  <div className="flex items-center">
-                    <span className="font-medium">{pothole.name}</span>
+          {!shouldHidePotholes && (
+            <CommandGroup
+              heading="Potholes"
+              className="[&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-1.5 [&_[cmdk-group-heading]]:text-xs [&_[cmdk-group-heading]]:font-medium"
+            >
+              {displayedPotholes.map((pothole) => (
+                <CommandItem
+                  key={pothole.id}
+                  value={`${pothole.name} ${new Date(pothole.created_at).toLocaleDateString()}`}
+                  onSelect={() => handleSelectPothole(pothole)}
+                  className="flex items-center gap-3 px-2 py-3"
+                >
+                  <AlertTriangle className="w-4 h-4 text-orange-500" />
+                  <div className="flex flex-col flex-1">
+                    <div className="flex items-center">
+                      <span className="font-medium">{pothole.name}</span>
+                    </div>
+                    <span className="text-xs text-muted-foreground">
+                      Reported:{" "}
+                      {new Date(pothole.created_at).toLocaleDateString()}
+                    </span>
                   </div>
-                  <span className="text-xs text-muted-foreground">
-                    Reported: {new Date(pothole.created_at).toLocaleDateString()}
-                  </span>
-                </div>
-              </CommandItem>
-            ))}
-          </CommandGroup>
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          )}
         </>
-      )
+      );
     }
-  }
+  };
 
   return (
     <CommandDialog
@@ -864,7 +851,11 @@ const CommandMenu = ({
       footerText={isNavigationMode ? "Go to Location" : "Go to Pothole"}
     >
       <CommandInput
-        placeholder={isNavigationMode ? "Search addresses, cities, landmarks…" : "Search potholes…"}
+        placeholder={
+          isNavigationMode
+            ? "Search addresses, cities, landmarks…"
+            : "Search potholes…"
+        }
         value={searchQuery}
         onValueChange={setSearchQuery}
       />
@@ -872,21 +863,19 @@ const CommandMenu = ({
         {renderCommandContent()}
       </CommandList>
     </CommandDialog>
-  )
-}
-
-
+  );
+};
 
 const PriorityModal = ({
   isOpen,
   onClose,
   potholes,
-  onNavigateToPothole
+  onNavigateToPothole,
 }: {
-  isOpen: boolean,
-  onClose: () => void,
-  potholes: Pothole[],
-  onNavigateToPothole: (pothole: Pothole) => void
+  isOpen: boolean;
+  onClose: () => void;
+  potholes: Pothole[];
+  onNavigateToPothole: (pothole: Pothole) => void;
 }) => {
   const topPotholes = [...potholes]
     .sort((a, b) => (b.upvote_count || 0) - (a.upvote_count || 0))
@@ -900,7 +889,8 @@ const PriorityModal = ({
             Top Priority Potholes
           </DialogTitle>
           <DialogDescription>
-            The most upvoted potholes by the community. Click on any pothole to navigate to its location.
+            The most upvoted potholes by the community. Click on any pothole to
+            navigate to its location.
           </DialogDescription>
         </DialogHeader>
 
@@ -936,7 +926,9 @@ const PriorityModal = ({
                     </TableCell>
                     <TableCell className="text-center">
                       <div className="size-6 mx-auto bg-gradient-to-b from-[#70b4ff] to-[#0a7eff] rounded-full shadow-[0px_0px_2.700000047683716px_1px_rgba(0,0,0,0.10)] outline-2 outline-offset-[-2px] outline-white inline-flex justify-center items-center gap-2.5 overflow-hidden">
-                        <div className="justify-start text-white text-sm font-medium">{pothole.upvote_count || 0}</div>
+                        <div className="justify-start text-white text-sm font-medium">
+                          {pothole.upvote_count || 0}
+                        </div>
                       </div>
                     </TableCell>
                   </TableRow>
@@ -951,20 +943,46 @@ const PriorityModal = ({
             No potholes found yet. Be the first to report one!
           </div>
         )}
-              <DialogFooter>
-        <Button onClick={onClose} className="opacity-0 pointer-events-none">Close</Button>
+        <DialogFooter>
+          <Button onClick={onClose} className="opacity-0 pointer-events-none">
+            Close
+          </Button>
         </DialogFooter>
       </DialogContent>
-
     </Dialog>
   );
 };
 
-const App = ({ initialPotholes, user }: { initialPotholes: Pothole[], user: User }) => {
- const focusOnPotholeRef = useRef<((pothole: Pothole) => void) | null>(null);
- const focusOnLocationRef = useRef<((location: typeof marylandLocations[0]) => void) | null>(null);
- const [commandDialogOpen, setCommandDialogOpen] = useState<boolean>(false);
- const [priorityModalOpen, setPriorityModalOpen] = useState<boolean>(false);
+const App = ({
+  initialPotholes,
+  user,
+}: {
+  initialPotholes: Pothole[];
+  user: User;
+}) => {
+  const focusOnPotholeRef = useRef<((pothole: Pothole) => void) | null>(null);
+  const focusOnLocationRef = useRef<
+    ((location: (typeof marylandLocations)[0]) => void) | null
+  >(null);
+  const location = useLocation();
+  const searchParams = new URLSearchParams(location.search);
+  const shouldOpenSearch = searchParams.get("search") === "open";
+
+  const [commandDialogOpen, setCommandDialogOpen] =
+    useState<boolean>(shouldOpenSearch);
+
+  // Handle opening command dialog when navigating with search parameter
+  useEffect(() => {
+    if (shouldOpenSearch && !commandDialogOpen) {
+      setCommandDialogOpen(true);
+      // Clean up the URL by removing the search parameter
+      const newSearchParams = new URLSearchParams(searchParams);
+      newSearchParams.delete("search");
+      const newSearch = newSearchParams.toString();
+      const newUrl = `${location.pathname}${newSearch ? `?${newSearch}` : ""}`;
+      window.history.replaceState(null, "", newUrl);
+    }
+  }, [shouldOpenSearch, commandDialogOpen, searchParams, location.pathname]);
 
   const handleFocusOnPothole = (pothole: Pothole) => {
     if (focusOnPotholeRef.current) {
@@ -972,45 +990,36 @@ const App = ({ initialPotholes, user }: { initialPotholes: Pothole[], user: User
     }
   };
 
-  const handleFocusOnLocation = (location: typeof marylandLocations[0]) => {
+  const handleFocusOnLocation = (location: (typeof marylandLocations)[0]) => {
     if (focusOnLocationRef.current) {
       focusOnLocationRef.current(location);
     }
   };
 
-  const handleOpenPriorityModal = () => {
-    setPriorityModalOpen(true);
-  };
-
   return (
-  <>
-   <MapKitMap
-    initialPotholes={initialPotholes}
-    user={user}
-    onFocusPothole={(fn) => { focusOnPotholeRef.current = fn; }}
-    onFocusLocation={(fn) => { focusOnLocationRef.current = fn; }}
-    onOpenCommandMenu={() => setCommandDialogOpen(true)}
-    commandDialogOpen={commandDialogOpen}
-    priorityModalOpen={priorityModalOpen}
-    onOpenPriorityModal={handleOpenPriorityModal}
-   />
-   <CommandMenu
-    potholes={initialPotholes}
-    focusOnPothole={handleFocusOnPothole}
-    focusOnLocation={handleFocusOnLocation}
-    externalOpen={commandDialogOpen}
-    onExternalOpenChange={setCommandDialogOpen}
-    onOpenPriorityModal={handleOpenPriorityModal}
-   />
-   <PriorityModal
-    isOpen={priorityModalOpen}
-    onClose={() => setPriorityModalOpen(false)}
-    potholes={initialPotholes}
-    onNavigateToPothole={handleFocusOnPothole}
-   />
-   <Toaster />
-  </>
- );
+    <>
+      <MapKitMap
+        initialPotholes={initialPotholes}
+        user={user}
+        onFocusPothole={(fn) => {
+          focusOnPotholeRef.current = fn;
+        }}
+        onFocusLocation={(fn) => {
+          focusOnLocationRef.current = fn;
+        }}
+        onOpenCommandMenu={() => setCommandDialogOpen(true)}
+        commandDialogOpen={commandDialogOpen}
+      />
+      <CommandMenu
+        potholes={initialPotholes}
+        focusOnPothole={handleFocusOnPothole}
+        focusOnLocation={handleFocusOnLocation}
+        externalOpen={commandDialogOpen}
+        onExternalOpenChange={setCommandDialogOpen}
+      />
+      <Toaster />
+    </>
+  );
 };
 
 export default App;
