@@ -177,18 +177,18 @@ const MapKitMap = ({
   }, [onFocusLocation]);
 
   useEffect(() => {
-    console.log("Map initialization useEffect triggered:", {
-      loading,
-      potholesLength: potholes.length,
-    });
+    // console.log("Map initialization useEffect triggered:", {
+    //   loading,
+    //   potholesLength: potholes.length,
+    // });
     if (loading || potholes.length === 0) {
-      console.log("Map initialization skipped:", {
-        loading,
-        potholesLength: potholes.length,
-      });
+      // console.log("Map initialization skipped:", {
+      //   loading,
+      //   potholesLength: potholes.length,
+      // });
       return;
     }
-    console.log("Map initialization proceeding...");
+    // console.log("Map initialization proceeding...");
 
     const setupMapKitJs = async (): Promise<void> => {
       if (!window.mapkit || window.mapkit.loadedLibraries.length === 0) {
@@ -206,8 +206,8 @@ const MapKitMap = ({
     };
 
     const initializeMap = async () => {
-      console.log("initializeMap: Starting map initialization");
-      console.log("initializeMap: potholes available:", potholes.length);
+      // console.log("initializeMap: Starting map initialization");
+      // console.log("initializeMap: potholes available:", potholes.length);
 
       await setupMapKitJs();
 
@@ -383,15 +383,15 @@ const MapKitMap = ({
       });
 
       if (mapContainerRef.current && !mapInstanceRef.current) {
-        console.log("initializeMap: Creating map instance");
-        console.log("initializeMap: annotations to show:", annotations.length);
+        // console.log("initializeMap: Creating map instance");
+        // console.log("initializeMap: annotations to show:", annotations.length);
         mapInstanceRef.current = new window.mapkit.Map(mapContainerRef.current);
         mapInstanceRef.current.showItems(annotations);
-        console.log("initializeMap: Map created and annotations added");
+        // console.log("initializeMap: Map created and annotations added");
       } else {
-        console.log(
-          "initializeMap: Map container not ready or map already exists"
-        );
+        // console.log(
+        //   "initializeMap: Map container not ready or map already exists"
+        // );
       }
     };
 
