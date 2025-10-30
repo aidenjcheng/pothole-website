@@ -221,7 +221,8 @@ const MapKitMap = ({
           const pothole = annotationsToPothole.get(annotation);
           if (!pothole) return null;
 
-          const div = createElementFromHTML(`
+          const div = createElementFromHTML(
+            `
             <div class="annotation-container">
             <div class="annotation-border"></div>
               <div class="header-section">
@@ -257,7 +258,7 @@ const MapKitMap = ({
                     </div>
                   </div>
                 </div>
-                <img class="location-image" src="https://placehold.co/362x187?text=Pothole" />
+                <img class="location-image" src="https://tzvqpyahzubjbirohfbw.supabase.co/storage/v1/object/public/potholes/${pothole.id}.jpg" />
               </div>
               <div class="actions-section">
                 <div class="buttons-container">
@@ -272,7 +273,8 @@ const MapKitMap = ({
                 </div>
               </div>
             </div>
-          `) as HTMLElement;
+          `
+          ) as HTMLElement;
 
           const upvoteBtn = div.querySelector(
             `#upvote-btn-${pothole.id}`
