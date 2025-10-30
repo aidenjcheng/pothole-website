@@ -33,8 +33,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <Meta />
         <Links />
       </head>
-      <body suppressHydrationWarning>
-        {children}
+      <body>
+        <div suppressHydrationWarning>{children}</div>
         <ScrollRestoration />
         <Scripts />
         <script

@@ -118,6 +118,8 @@ const Sidebar = ({
                   }`,
                 };
 
+                const { key, ...otherProps } = commonProps;
+
                 const content = (
                   <>
                     <IconComponent className="w-4 h-4" />
@@ -129,11 +131,11 @@ const Sidebar = ({
                 );
 
                 return item.useLink ? (
-                  <Link {...commonProps} to={item.to!}>
+                  <Link key={key} {...otherProps} to={item.to!}>
                     {content}
                   </Link>
                 ) : (
-                  <div {...commonProps} onClick={item.onClick}>
+                  <div key={key} {...otherProps} onClick={item.onClick}>
                     {content}
                   </div>
                 );
