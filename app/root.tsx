@@ -36,7 +36,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
       <body>
         <div suppressHydrationWarning>{children}</div>
         <ScrollRestoration />
-        <Scripts />
         <script
           src="https://cdn.apple-mapkit.com/mk/5.x.x/mapkit.core.js"
           crossOrigin="anonymous"
@@ -45,6 +44,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
           data-libraries="services,map,annotations,look-around"
           data-token={import.meta.env.VITE_MAPKIT_PRIVATE_TOKEN}
         />
+        <Scripts />
       </body>
     </html>
   );
