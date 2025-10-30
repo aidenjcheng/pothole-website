@@ -10,7 +10,6 @@ import { Link } from "react-router";
 import { useState, useEffect, useRef } from "react";
 import { cn } from "~/lib/utils";
 import {
-  Plus,
   MoreVertical,
   MapPin,
   Calendar,

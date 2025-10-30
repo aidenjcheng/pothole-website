@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router";
 import { Compass, Slash, ArrowLeft } from "lucide-react";
 import { Button } from "~/components/ui/button";

@@ -7,7 +7,7 @@ import {
   useNavigate,
 } from "react-router";
 import { useState, useEffect } from "react";
-import { Trophy, TrendingUp, Calendar, MapPin, ArrowUp } from "lucide-react";
+import { Trophy, Calendar, MapPin } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import Sidebar from "~/components/sidebar/Sidebar";
 import { CommandMenu } from "~/maps/maps";

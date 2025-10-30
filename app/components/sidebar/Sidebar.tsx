@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { useLocation, Link } from "react-router";
 import { Search, MapPin, LogOut, FileText, Map, Trophy } from "lucide-react";
 import { Button } from "~/components/ui/button";
