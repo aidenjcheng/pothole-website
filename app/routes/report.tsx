@@ -300,7 +300,7 @@ export default function ReportsList() {
       if (error) throw error;
 
       setDialogOpen(false);
-      navigate(`/report/${newReport.id}`);
+      navigate(`/reports/${newReport.id}`);
     } catch (error) {
       console.error("Error:", error);
       alert("Failed to create report");
